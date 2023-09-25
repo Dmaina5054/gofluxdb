@@ -46,6 +46,7 @@ func InitCLient(client influxdb2.Client, bucket string) {
   |> range(start: -30s)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
+  |> filter(fn: (r) => r["_value"] == 2)
   |> distinct(column: "_table")
    |> distinct(column: "serialNumber")
   |> first()
@@ -195,7 +196,7 @@ func performTransformation(record *query.FluxRecord, client influxdb2.Client, de
 			writeApi.WritePoint(context.Background(), p)
 
 		}
-
+		return
 	}
 
 }
