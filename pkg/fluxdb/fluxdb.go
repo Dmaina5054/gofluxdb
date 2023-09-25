@@ -94,7 +94,7 @@ func InitCLient(client influxdb2.Client, bucket string) {
 
 }
 
-func enrichResult(serialNumber string, apiSuffix string) EndpointResult {
+func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
 	// Define the API endpoint and parameters
 	kompApi := os.Getenv("KOMP_API_URL")
@@ -158,6 +158,34 @@ func enrichResult(serialNumber string, apiSuffix string) EndpointResult {
 
 	}
 	if len(result) == 0 {
+
+		//TODO: Write to base
+		//write serialNumber without komp result to file
+		logFilename := "missedOnus.txt"
+		//open for writing
+		file, err := os.OpenFile(logFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+
+		}
+		defer file.Close()
+
+		//only write unique
+		uniquePayload := make(map[string]bool)
+
+		writePayload := fmt.Sprint(serialCode + ":" + destBucket + "\n")
+		//confirm unique before write
+		if !uniquePayload[writePayload] {
+			//perform write
+			_, err = file.Write([]byte(writePayload))
+			if err != nil {
+				log.Println(err)
+			}
+			// Add the data to the set to mark it as written
+			uniquePayload[writePayload] = true
+
+		}
+
 		log.Printf("Failed to get result for %s :", serialCode)
 		return EndpointResult{}
 	}
@@ -178,7 +206,7 @@ func performTransformation(record *query.FluxRecord, client influxdb2.Client, de
 	for range record.Values() {
 		serialNo := record.ValueByKey("serialNumber")
 		if serialNo != "<nil>" {
-			apires := enrichResult(serialNo.(string), apiSuffix)
+			apires := enrichResult(serialNo.(string), apiSuffix, destBucket)
 			fmt.Println(apires.BuildingName)
 
 			p := influxdb2.NewPointWithMeasurement("interface")
@@ -199,7 +227,6 @@ func performTransformation(record *query.FluxRecord, client influxdb2.Client, de
 		}
 
 	}
-	
 
 }
 
