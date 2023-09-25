@@ -158,6 +158,7 @@ func enrichResult(serialNumber string, apiSuffix string) EndpointResult {
 
 	}
 	if len(result) == 0 {
+		log.Printf("Failed to get result for %s :", serialCode)
 		return EndpointResult{}
 	}
 
@@ -196,8 +197,9 @@ func performTransformation(record *query.FluxRecord, client influxdb2.Client, de
 			writeApi.WritePoint(context.Background(), p)
 
 		}
-		return
+
 	}
+	
 
 }
 
@@ -206,18 +208,18 @@ func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
 
 	//define prefix handlers
-	prefixes := []string{"mwkn","mwks","stn", "kwd", "ksn"}
+	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn"}
 
 	//iterate and check if exist
-	for _, prefix := range prefixes{
-		if strings.HasPrefix(lowercaseInput, prefix){
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(lowercaseInput, prefix) {
+			fmt.Println(prefix)
 			return prefix
+
 		}
-		fmt.Println(prefix)
-		
+
 	}
-	
+
 	return ""
 
-	
 }
