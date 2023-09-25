@@ -10,8 +10,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/joho/godotenv"
-
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/query"
 )
@@ -38,21 +36,7 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-func InitCLient() {
-	//load environment variables
-
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("erro loading .env file: %v", err)
-	}
-
-	// get influxdb config properties
-	influxUrl := os.Getenv("INFLUX_URL")
-	influxToken := os.Getenv("INFLUX_TK")
-
-	//create a client
-	client := influxdb2.NewClient(influxUrl, influxToken)
-	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
-	defer client.Close()
+func InitCLient(client influxdb2.Client) {
 
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
