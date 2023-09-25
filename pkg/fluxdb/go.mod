@@ -2,7 +2,10 @@ module github.com/Dmaina5054/gofluxdb/fluxdb
 
 go 1.21.0
 
-require github.com/influxdata/influxdb-client-go/v2 v2.12.3
+require (
+	github.com/influxdata/influxdb-client-go/v2 v2.12.3
+	github.com/joho/godotenv v1.5.1
+)
 
 require (
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect

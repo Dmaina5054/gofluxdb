@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"os"
+	"github.com/joho/godotenv"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/query"
@@ -31,14 +33,28 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
+
+
 //TODO: refactor allow
 //passing of parameters for
 //bucket or desired timestamp
 
 func InitCLient() {
+	//load environment variables
+
+if err := godotenv.Load(); err != nil{
+	log.Fatalf("erro loading .env file: %v", err)
+}
+
+//get influxdb config properties
+influxUrl := os.Getenv("INFLUX_URL")
+influxToken := os.Getenv("INFLUX_TK")
+
+
+
 
 	//create a client
-	client := influxdb2.NewClient("http://105.29.165.232:23027/", "NgFqGrQ5ufMPdpcbi1eciKqKEJu_jWh-d1BWUJ8HHQZ1LetJunbkFTg850dJQ--7I0l5t2QtVkt_J2coSj0z5g==")
+	client := influxdb2.NewClient(influxUrl, influxToken)
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
@@ -99,7 +115,9 @@ func InitCLient() {
 func enrichResult(serialNumber string) EndpointResult {
 
 	// Define the API endpoint and parameters
-	apiURL := "http://app.sasakonnect.net:13000/api/onus/mwkn"
+	kompApi := os.Getenv("KOMP_API_URL")
+	fullApiURL := kompApi + "/" + "mwkn"
+	kompJwt := os.Getenv("KOMP_JWT")
 	serialCode := serialNumber
 
 	// Create an HTTP client
@@ -108,7 +126,7 @@ func enrichResult(serialNumber string) EndpointResult {
 	}
 
 	// Create an HTTP GET request
-	req, err := http.NewRequest("GET", apiURL, nil)
+	req, err := http.NewRequest("GET", fullApiURL, nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 
@@ -116,7 +134,7 @@ func enrichResult(serialNumber string) EndpointResult {
 
 	// Set request headers
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", "Bearer 44ttFGTyppKWd3WVX642nqpC5E2YEue1mlKxdub4QeAypY1QBE5sV09pwJFqHmb5DJC4oFOO8K5zE6qY")
+	req.Header.Add("Authorization",kompJwt)
 	req.Header.Add("X-CSRF-TOKEN", "")
 
 	// Add query parameters
