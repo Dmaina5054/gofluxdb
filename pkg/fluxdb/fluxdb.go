@@ -7,8 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"time"
 	"os"
+	"time"
+
 	"github.com/joho/godotenv"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -40,13 +41,13 @@ type EndpointResult struct {
 func InitCLient() {
 	//load environment variables
 
-if err := godotenv.Load(); err != nil{
-	log.Fatalf("erro loading .env file: %v", err)
-}
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("erro loading .env file: %v", err)
+	}
 
-//get influxdb config properties
-influxUrl := os.Getenv("INFLUX_URL")
-influxToken := os.Getenv("INFLUX_TK")
+	// get influxdb config properties
+	influxUrl := os.Getenv("INFLUX_URL")
+	influxToken := os.Getenv("INFLUX_TK")
 
 	//create a client
 	client := influxdb2.NewClient(influxUrl, influxToken)
@@ -129,7 +130,7 @@ func enrichResult(serialNumber string) EndpointResult {
 
 	// Set request headers
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization",kompJwt)
+	req.Header.Add("Authorization", kompJwt)
 	req.Header.Add("X-CSRF-TOKEN", "")
 
 	// Add query parameters
