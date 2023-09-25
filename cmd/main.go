@@ -29,5 +29,7 @@ func main() {
 	defer client.Close()
 
 	fluxdb.InitCLient(client, "MWKn")
+	
+	//go fluxdb.InitCLient(client, "MWKs")
 
 }
