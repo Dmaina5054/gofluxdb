@@ -28,8 +28,13 @@ func main() {
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
-	fluxdb.InitCLient(client, "MWKn")
+	//run in seperate goroutines
+	go fluxdb.InitCLient(client, "MWKn")
+	go fluxdb.InitCLient(client, "MWKs")
+
+	//keep main running for other goroutines to execute
+	select {}
+
 	
-	//go fluxdb.InitCLient(client, "MWKs")
 
 }
