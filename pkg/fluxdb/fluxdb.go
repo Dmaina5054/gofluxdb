@@ -33,8 +33,6 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
-
-
 //TODO: refactor allow
 //passing of parameters for
 //bucket or desired timestamp
@@ -49,9 +47,6 @@ if err := godotenv.Load(); err != nil{
 //get influxdb config properties
 influxUrl := os.Getenv("INFLUX_URL")
 influxToken := os.Getenv("INFLUX_TK")
-
-
-
 
 	//create a client
 	client := influxdb2.NewClient(influxUrl, influxToken)
