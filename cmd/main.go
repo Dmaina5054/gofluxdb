@@ -1,9 +1,33 @@
 package main
 
-import "github.com/Dmaina5054/gofluxdb/fluxdb"
+import (
+	"log"
+	"os"
+	"time"
 
+	"github.com/Dmaina5054/gofluxdb/fluxdb"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/joho/godotenv"
+)
 
-func main(){
-	//implement mechanism for cron here
-	fluxdb.InitCLient()
+func main() {
+	//initialize the fluxdb client
+
+	//load environment variables
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("erro loading .env file: %v", err)
+	}
+
+	// get influxdb config properties
+	influxUrl := os.Getenv("INFLUX_URL")
+	influxToken := os.Getenv("INFLUX_TK")
+
+	//create a client
+	client := influxdb2.NewClient(influxUrl, influxToken)
+	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
+	defer client.Close()
+
+	fluxdb.InitCLient(client)
+
 }
