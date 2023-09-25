@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -32,7 +33,6 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
-//TODO: refactor allow
 //passing of parameters for
 //bucket or desired timestamp
 
@@ -46,7 +46,8 @@ func InitCLient(client influxdb2.Client, bucket string) {
   |> range(start: -30s)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
-  |> distinct(column: "serialNumber")
+  |> distinct(column: "_table")
+   |> distinct(column: "serialNumber")
   |> first()
 `, bucket)
 
@@ -63,20 +64,21 @@ func InitCLient(client influxdb2.Client, bucket string) {
 		serialNumber := record.ValueByKey("serialNumber")
 		serialNumberValue, ok := serialNumber.(string)
 
-		
-
 		if !ok {
 			log.Printf("Warning: serial number %v\n got expected string", serialNumber)
 			continue
 		}
 
 		//fonnd serialNUmber, enrich
-		log.Printf("Processing serialNumberValue: %s", serialNumberValue)
+		log.Printf("Processing serialNumberValue: %s for Bucket %s", serialNumberValue, bucket)
 
-		//define destination bucket 
+		//define destination bucket
 		destBcket := bucket + "Downsampled"
 
-		go performTransformation(record, client, destBcket)
+		//determine endpoint suffix for KOMP API
+		kompApiSuffix := formatApiPrefix(bucket)
+
+		go performTransformation(record, client, destBcket, kompApiSuffix)
 
 		time.Sleep(5 * time.Second)
 
@@ -91,17 +93,17 @@ func InitCLient(client influxdb2.Client, bucket string) {
 
 }
 
-func enrichResult(serialNumber string) EndpointResult {
+func enrichResult(serialNumber string, apiSuffix string) EndpointResult {
 
 	// Define the API endpoint and parameters
 	kompApi := os.Getenv("KOMP_API_URL")
-	fullApiURL := kompApi + "/" + "mwkn"
+	fullApiURL := kompApi + "/" + apiSuffix
 	kompJwt := os.Getenv("KOMP_JWT")
 	serialCode := serialNumber
 
 	// Create an HTTP client
 	client := &http.Client{
-		Timeout: 100 * time.Second,
+		Timeout: 100000 * time.Second,
 	}
 
 	// Create an HTTP GET request
@@ -163,9 +165,8 @@ func enrichResult(serialNumber string) EndpointResult {
 }
 
 // perform transformation
-func performTransformation(record *query.FluxRecord,client influxdb2.Client, destBucket string) {
+func performTransformation(record *query.FluxRecord, client influxdb2.Client, destBucket string, apiSuffix string) {
 
-		
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
@@ -175,7 +176,7 @@ func performTransformation(record *query.FluxRecord,client influxdb2.Client, des
 	for range record.Values() {
 		serialNo := record.ValueByKey("serialNumber")
 		if serialNo != "<nil>" {
-			apires := enrichResult(serialNo.(string))
+			apires := enrichResult(serialNo.(string), apiSuffix)
 			fmt.Println(apires.BuildingName)
 
 			p := influxdb2.NewPointWithMeasurement("interface")
@@ -195,7 +196,27 @@ func performTransformation(record *query.FluxRecord,client influxdb2.Client, des
 
 		}
 
-		
 	}
 
+}
+
+// function to determine endpoint to be scrapped
+func formatApiPrefix(bucketName string) string {
+	lowercaseInput := strings.ToLower(bucketName)
+
+	//define prefix handlers
+	prefixes := []string{"mwkn","mwks","stn", "kwd", "ksn"}
+
+	//iterate and check if exist
+	for _, prefix := range prefixes{
+		if strings.HasPrefix(lowercaseInput, prefix){
+			return prefix
+		}
+		fmt.Println(prefix)
+		
+	}
+	
+	return ""
+
+	
 }

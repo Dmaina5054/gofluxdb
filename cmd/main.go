@@ -31,10 +31,11 @@ func main() {
 	//run in seperate goroutines
 	go fluxdb.InitCLient(client, "MWKn")
 	go fluxdb.InitCLient(client, "MWKs")
+	go fluxdb.InitCLient(client, "STNOnu")
+	go fluxdb.InitCLient(client, "KWDOnu")
+	go fluxdb.InitCLient(client, "KSNOnu")
 
 	//keep main running for other goroutines to execute
 	select {}
-
-	
 
 }
