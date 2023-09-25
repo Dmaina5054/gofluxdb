@@ -46,12 +46,9 @@ func InitCLient(client influxdb2.Client, bucket string) {
   |> range(start: -30s)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
-  
-  |> filter(fn: (r) => r["host"] == "MWKn-FIBER")
- 
   |> distinct(column: "serialNumber")
   |> first()
-`, bucket) 
+`, bucket)
 
 	res, err := queryApi.Query(context.Background(), fluxQuery)
 	if err != nil {
@@ -66,6 +63,8 @@ func InitCLient(client influxdb2.Client, bucket string) {
 		serialNumber := record.ValueByKey("serialNumber")
 		serialNumberValue, ok := serialNumber.(string)
 
+		
+
 		if !ok {
 			log.Printf("Warning: serial number %v\n got expected string", serialNumber)
 			continue
@@ -74,7 +73,10 @@ func InitCLient(client influxdb2.Client, bucket string) {
 		//fonnd serialNUmber, enrich
 		log.Printf("Processing serialNumberValue: %s", serialNumberValue)
 
-		go performTransformation(record)
+		//define destination bucket 
+		destBcket := bucket + "Downsampled"
+
+		go performTransformation(record, client, destBcket)
 
 		time.Sleep(5 * time.Second)
 
@@ -161,16 +163,14 @@ func enrichResult(serialNumber string) EndpointResult {
 }
 
 // perform transformation
-func performTransformation(record *query.FluxRecord) {
+func performTransformation(record *query.FluxRecord,client influxdb2.Client, destBucket string) {
 
-	//initialize a client
-	//TODO: to move to main func
-	client := influxdb2.NewClient("http://105.29.165.232:23027/", "NgFqGrQ5ufMPdpcbi1eciKqKEJu_jWh-d1BWUJ8HHQZ1LetJunbkFTg850dJQ--7I0l5t2QtVkt_J2coSj0z5g==")
+		
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
 	//initialize write api
-	writeApi := client.WriteAPIBlocking("techops_monitor", "onuDownsampled")
+	writeApi := client.WriteAPIBlocking("techops_monitor", destBucket)
 
 	for range record.Values() {
 		serialNo := record.ValueByKey("serialNumber")
@@ -195,7 +195,7 @@ func performTransformation(record *query.FluxRecord) {
 
 		}
 
-		//fmt.Printf("%v:%v\n\n", key, value)
+		
 	}
 
 }
