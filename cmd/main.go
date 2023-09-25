@@ -28,6 +28,6 @@ func main() {
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
-	fluxdb.InitCLient(client)
+	fluxdb.InitCLient(client, "MWKn")
 
 }

@@ -36,25 +36,22 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-func InitCLient(client influxdb2.Client) {
+func InitCLient(client influxdb2.Client, bucket string) {
 
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
 	// Flux query
-	fluxQuery := `
-	from(bucket: "MWKn")
+	fluxQuery := fmt.Sprintf(`
+	from(bucket: "%s")
   |> range(start: -30s)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
   
   |> filter(fn: (r) => r["host"] == "MWKn-FIBER")
  
-  
   |> distinct(column: "serialNumber")
   |> first()
-
-  
-	`
+`, bucket) 
 
 	res, err := queryApi.Query(context.Background(), fluxQuery)
 	if err != nil {
