@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -36,8 +37,9 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-func InitCLient(client influxdb2.Client, bucket string) {
+func InitClient(client influxdb2.Client,wg *sync.WaitGroup, bucket string) {
 
+	defer wg.Done()
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
 	// Flux query
@@ -68,6 +70,7 @@ func InitCLient(client influxdb2.Client, bucket string) {
 		if !ok {
 			log.Printf("Warning: serial number %v\n got expected string", serialNumber)
 			continue
+
 		}
 
 		//fonnd serialNUmber, enrich
@@ -79,7 +82,7 @@ func InitCLient(client influxdb2.Client, bucket string) {
 		//determine endpoint suffix for KOMP API
 		kompApiSuffix := formatApiPrefix(bucket)
 
-		go performTransformation(record, client, destBcket, kompApiSuffix)
+		performTransformation(record, client, destBcket, kompApiSuffix)
 
 		time.Sleep(5 * time.Second)
 
@@ -161,7 +164,7 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 
 		//TODO: Write to base
 		//write serialNumber without komp result to file
-		logFilename := "missedOnus.txt"
+		logFilename := "/home/ahadi-daniel/Projects/AH/gofluxdb/logs/missedOnus.txt"
 		//open for writing
 		file, err := os.OpenFile(logFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {

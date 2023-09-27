@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/Dmaina5054/gofluxdb/fluxdb"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -29,34 +29,17 @@ func main() {
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
-	//create a ticker to tick every 15 minutes
-	ticker := time.NewTicker(15 * time.Minute)
-
 	//creating a waitgroup
 	var wg sync.WaitGroup
 
 	// Initialize Goroutine for periodic code run
-	
-		for _, bucketName:= range []string{"MWKn", "MWKs", "STNOnu", "KWDOnu", "KSNOnu"} {
+	wg.Add(2)
+	go fluxdb.InitClient(client, &wg, "MWKn")
+	go fluxdb.InitClient(client, &wg, "MWKs")
 
-			wg.Add(1)
-			go func(bucket string){
-				defer wg.Done()
-				for {
-					fluxdb.InitCLient(client,bucket)
-
-					//wait for next tick
-					<-ticker.C
-				}
-
-			}(bucketName)
-			
-		}
-
-		//wait for all goroutines to end
-		wg.Wait()
-	
-
-	
+	log.Println("Waiting to complete goroutines")
+	//wait for all goroutines to end
+	wg.Wait()
+	log.Println("Done processing Buckets")
 
 }
