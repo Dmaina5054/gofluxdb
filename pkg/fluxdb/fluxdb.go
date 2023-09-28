@@ -56,7 +56,7 @@ func InitClient(client influxdb2.Client,wg *sync.WaitGroup, bucket string) {
 
 	res, err := queryApi.Query(context.Background(), fluxQuery)
 	if err != nil {
-		log.Fatalf("Error %v", err)
+		log.Fatalf("Error %v", err.Error())
 	}
 
 	// process record if no error
@@ -164,7 +164,8 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 
 		//TODO: Write to base
 		//write serialNumber without komp result to file
-		logFilename := "/home/ahadi-daniel/Projects/AH/gofluxdb/logs/missedOnus.txt"
+		logPath := os.Getenv("LOG_PATH")
+		logFilename := logPath + "missedOnus.txt"
 		//open for writing
 		file, err := os.OpenFile(logFilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {

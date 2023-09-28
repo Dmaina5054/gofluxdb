@@ -33,9 +33,13 @@ func main() {
 	var wg sync.WaitGroup
 
 	// Initialize Goroutine for periodic code run
-	wg.Add(2)
+	wg.Add(5)
 	go fluxdb.InitClient(client, &wg, "MWKn")
 	go fluxdb.InitClient(client, &wg, "MWKs")
+	go fluxdb.InitClient(client, &wg, "STNOnu")
+	go fluxdb.InitClient(client, &wg, "KSNOnu")
+	go fluxdb.InitClient(client, &wg, "KWDOnu")
+
 
 	log.Println("Waiting to complete goroutines")
 	//wait for all goroutines to end
