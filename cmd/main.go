@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 	"time"
+	"github.com/hibiken/asynq"
+	"github.com/Dmaina5054/gofluxdb/tasks"
 
 	"github.com/Dmaina5054/gofluxdb/fluxdb"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
