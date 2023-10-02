@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
+	"github.com/Dmaina5054/gofluxdb/fluxdb"
 	"github.com/hibiken/asynq"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/joho/godotenv"
 )
-
 
 // define list of task types
 const (
@@ -55,7 +59,35 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 
 	}
 	fmt.Println("Sent task download...")
+
 	//code to fetch flux records here
-	return nil
+	//initialize the fluxdb client
+
+	//load environment variables
+
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("erro loading .env file: %v", err)
+	}
+
+	// get influxdb config properties
+	influxUrl := os.Getenv("INFLUX_URL")
+	influxToken := os.Getenv("INFLUX_TK")
+
+	//create a client
+	client := influxdb2.NewClient(influxUrl, influxToken)
+	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
+	defer client.Close()
+
+	buckets := []string{"MWKn", "MWKs","STNOnu", "KSNOnu", "KWDOnu"}
+	for _, buck := range buckets {
+		_, err := fluxdb.InitClient(client, buck)
+		if err != nil {
+			return err
+		}
+		
+
+	}
+	log.Println("Done processing...")
+		return nil
 
 }

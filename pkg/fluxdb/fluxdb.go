@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -37,9 +36,9 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-func InitClient(client influxdb2.Client, wg *sync.WaitGroup, bucket string) {
+func InitClient(client influxdb2.Client, bucket string)(string, error) {
 
-	defer wg.Done()
+	// defer wg.Done()
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
 	// Flux query
@@ -96,7 +95,7 @@ func InitClient(client influxdb2.Client, wg *sync.WaitGroup, bucket string) {
 	if res.Err() != nil {
 		log.Fatalf("Error reading record %v", res.Err().Error())
 	}
-
+return "ok", err
 }
 
 func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
