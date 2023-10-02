@@ -37,7 +37,7 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-func InitClient(client influxdb2.Client,wg *sync.WaitGroup, bucket string) {
+func InitClient(client influxdb2.Client, wg *sync.WaitGroup, bucket string) {
 
 	defer wg.Done()
 	// define queryApi
@@ -54,7 +54,9 @@ func InitClient(client influxdb2.Client,wg *sync.WaitGroup, bucket string) {
   |> first()
 `, bucket)
 
-	res, err := queryApi.Query(context.Background(), fluxQuery)
+	ctx := context.Background()
+
+	res, err := queryApi.Query(ctx, fluxQuery)
 	if err != nil {
 		log.Fatalf("Error %v", err.Error())
 	}
