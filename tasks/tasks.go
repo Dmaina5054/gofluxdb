@@ -53,12 +53,12 @@ func NewFluxdbFetch(bucketName string, destinationBucket string) (*asynq.Task, e
 func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	fmt.Println(t.Type())
 	//to store unmarshalled res
-	var p FluxdbFetchPayload
-	if err := json.Unmarshal(t.Payload(), &p); err != nil {
-		return fmt.Errorf("Json failed to unmarshall: %v: %w", err, asynq.SkipRetry)
+	// var p FluxdbFetchPayload
+	// if err := json.Unmarshal(t.Payload(), &p); err != nil {
+	// 	return fmt.Errorf("Jsoniled to unmarshall: %v: %w", err, asynq.SkipRetry)
 
-	}
-	fmt.Println("Sent task download...")
+	// }
+	// fmt.Println("Sent task download...")
 
 	//code to fetch flux records here
 	//initialize the fluxdb client
@@ -78,16 +78,15 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
-	buckets := []string{"MWKn", "MWKs","STNOnu", "KSNOnu", "KWDOnu"}
+	buckets := []string{"MWKn", "MWKs", "STNOnu", "KSNOnu", "KWDOnu"}
 	for _, buck := range buckets {
 		_, err := fluxdb.InitClient(client, buck)
 		if err != nil {
 			return err
 		}
-		
 
 	}
 	log.Println("Done processing...")
-		return nil
+	return nil
 
 }
