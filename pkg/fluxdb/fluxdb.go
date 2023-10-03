@@ -224,7 +224,7 @@ func performTransformation(record *query.FluxRecord, client influxdb2.Client, de
 			p.AddTag("BuildingCode", apires.BuildingCode)
 			p.AddTag("ClientName", apires.ClientName)
 			p.AddTag("ClientContact", fmt.Sprintf("%v", apires.ClientContact))
-			p.AddTag("GponPort", fmt.Sprint("%v", apires.Port))
+			p.AddTag("GponPort", fmt.Sprintf("%v", apires.Port))
 
 			p.SetTime(time.Now())
 			//write point to bucket now
