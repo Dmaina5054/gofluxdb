@@ -5,10 +5,10 @@ import (
 	"log"
 	"time"
 
-	//"github.com/Dmaina5054/gofluxdb/tasks"
+	"github.com/Dmaina5054/gofluxdb/tasks"
 	//	"github.com/Dmaina5054/gofluxdb/tasks/taskclient"
 
-	"github.com/Dmaina5054/gofluxdb/tasks"
+	//"github.com/Dmaina5054/gofluxdb/tasks"
 	"github.com/hibiken/asynq"
 )
 
@@ -25,12 +25,13 @@ type FluxdbFetchPayload struct {
 	DestinationBucket string
 }
 
-func main() {
+func initScheduler() {
 
 	//init scheduler
 	scheduler := asynq.NewScheduler(
 		asynq.RedisClientOpt{Addr: ":6379"},
-		&asynq.SchedulerOpts{Location: time.Local},
+		&asynq.SchedulerOpts{Location: time.Local,
+		LogLevel: asynq.DebugLevel,},
 	)
 	payload, err := json.Marshal(FluxdbFetchPayload{BucketName: "MWKs", DestinationBucket: "MWKsDownsampled"})
 	if err != nil {
@@ -44,7 +45,13 @@ func main() {
 	if err := scheduler.Run(); err != nil {
 		log.Fatal(err)
 	}
-	// //taskclient.ExecuteClient()
+
+}
+
+func main() {
+
+	//initScheduler()
+	//taskclient.ExecuteClient()
 
 	//new server to start the workers
 	srv := asynq.NewServer(

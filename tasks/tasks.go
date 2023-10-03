@@ -78,7 +78,7 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
 	defer client.Close()
 
-	buckets := []string{"MWKn", "MWKs", "STNOnu", "KSNOnu", "KWDOnu"}
+	buckets := []string{"MWKn", "MWKs", "KSNOnu", "KWDOnu"}
 	for _, buck := range buckets {
 		_, err := fluxdb.InitClient(client, buck)
 		if err != nil {
