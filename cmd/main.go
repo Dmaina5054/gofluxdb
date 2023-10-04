@@ -28,7 +28,7 @@ func initScheduler() {
 	scheduler := asynq.NewScheduler(
 		asynq.RedisClientOpt{Addr: ":6379"},
 		&asynq.SchedulerOpts{Location: time.Local,
-		LogLevel: asynq.DebugLevel,},
+		LogLevel: asynq.InfoLevel,},
 	)
 	payload, err := json.Marshal(FluxdbFetchPayload{BucketName: "MWKs", DestinationBucket: "MWKsDownsampled"})
 	if err != nil {
