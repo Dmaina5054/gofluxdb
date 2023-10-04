@@ -9,3 +9,9 @@ build:
 
 run:
 	go run $(CMD_DIR)/$(BINARY_NAME).go
+
+get:
+    cd $(CMD_DIR) && go get ./...
+
+clean:
+    rm -f $(BINARY_NAME)

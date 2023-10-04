@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -27,20 +26,7 @@ type FluxdbFetchPayload struct {
 	DestinationBucket string
 }
 
-//create task
-//task has type and payload
 
-func NewFluxdbFetch(bucketName string, destinationBucket string) (*asynq.Task, error) {
-	payload, err := json.Marshal(FluxdbFetchPayload{BucketName: bucketName, DestinationBucket: destinationBucket})
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("Starting tasks...")
-	//no error
-	//return new asynq task
-	return asynq.NewTask(TypeFluxdbFetch, payload, asynq.MaxRetry(5), asynq.Timeout(30*time.Minute)), nil
-
-}
 
 //func to handle task xxx
 
