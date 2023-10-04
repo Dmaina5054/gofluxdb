@@ -43,28 +43,10 @@ func NewFluxdbFetch(bucketName string, destinationBucket string) (*asynq.Task, e
 }
 
 //func to handle task xxx
-//satisfies asynq.HandleFunc interface
-//can also be a type that satisfies asynq.Handler interface
 
-// need to accept, ctx and pointer to task
-// need to return error if task failed
-// use HandlerFunc adapter that
-// allows ordinary funcs as handlers
 func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	fmt.Println(t.Type())
-	//to store unmarshalled res
-	// var p FluxdbFetchPayload
-	// if err := json.Unmarshal(t.Payload(), &p); err != nil {
-	// 	return fmt.Errorf("Jsoniled to unmarshall: %v: %w", err, asynq.SkipRetry)
-
-	// }
-	// fmt.Println("Sent task download...")
-
-	//code to fetch flux records here
-	//initialize the fluxdb client
-
-	//load environment variables
-
+	
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("erro loading .env file: %v", err)
 	}
@@ -72,13 +54,15 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	// get influxdb config properties
 	influxUrl := os.Getenv("INFLUX_URL")
 	influxToken := os.Getenv("INFLUX_TK")
+	
+	
 
 	//create a client
-	client := influxdb2.NewClient(influxUrl, influxToken)
-	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
+	client := influxdb2.NewClientWithOptions(influxUrl, influxToken, influxdb2.DefaultOptions().SetMaxRetries(5))
+	client.Options().SetHTTPRequestTimeout(uint(30000 * time.Second))
 	defer client.Close()
 
-	buckets := []string{"MWKn", "MWKs", "KSNOnu", "KWDOnu"}
+	buckets := []string{"MWKn", "MWKs", "KSNOnu", "KWDOnu", "STNOnu"}
 	for _, buck := range buckets {
 		_, err := fluxdb.InitClient(client, buck)
 		if err != nil {

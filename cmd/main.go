@@ -51,7 +51,6 @@ func initScheduler() {
 func main() {
 
 	//initScheduler()
-	//taskclient.ExecuteClient()
 
 	//new server to start the workers
 	srv := asynq.NewServer(

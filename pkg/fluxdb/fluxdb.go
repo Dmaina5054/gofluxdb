@@ -36,11 +36,15 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
+
 func InitClient(client influxdb2.Client, bucket string)(string, error) {
 
-	// defer wg.Done()
+	//define a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 45* time.Second)
+	defer cancel()
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
+
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
@@ -53,11 +57,12 @@ func InitClient(client influxdb2.Client, bucket string)(string, error) {
   |> first()
 `, bucket)
 
-	ctx := context.Background()
+	
 
 	res, err := queryApi.Query(ctx, fluxQuery)
 	if err != nil {
-		log.Fatalf("Error %v", err.Error())
+		//hande InfluxDB-specific error
+		log.Printf("Influx Error: %v", err)
 	}
 
 	// process record if no error
