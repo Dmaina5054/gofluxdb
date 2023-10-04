@@ -6,9 +6,6 @@ import (
 	"time"
 
 	"github.com/Dmaina5054/gofluxdb/tasks"
-	//	"github.com/Dmaina5054/gofluxdb/tasks/taskclient"
-
-	//"github.com/Dmaina5054/gofluxdb/tasks"
 	"github.com/hibiken/asynq"
 )
 
