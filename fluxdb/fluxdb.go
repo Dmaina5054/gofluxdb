@@ -246,7 +246,7 @@ func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
 
 	//define prefix handlers
-	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn"}
+	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn","krbs"}
 
 	//iterate and check if exist
 	for _, prefix := range prefixes {
