@@ -51,7 +51,7 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 
 	//create a client
 	client := influxdb2.NewClientWithOptions(influxUrl, influxToken, influxdb2.DefaultOptions().SetMaxRetries(5))
-	client.Options().SetHTTPRequestTimeout(uint(30000 * time.Second)).SetLogLevel(3)
+	client.Options().SetHTTPRequestTimeout(uint(30000 * time.Second)).SetLogLevel(4)
 	defer client.Close()
 
 	
