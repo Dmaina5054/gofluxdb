@@ -7,10 +7,7 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-// define list of task types
-const (
-	TypeFluxdbFetch = "fluxdb:fetchrecords"
-)
+
 
 //define payloads for tasks
 

@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -22,8 +23,8 @@ const (
 
 // for TypeFluxdbFetch
 type FluxdbFetchPayload struct {
-	BucketName        string
-	DestinationBucket string
+	BucketName        string `json:"bucketName"`        // Added struct tags for proper unmarshaling
+	DestinationBucket string `json:"destinationBucket"` // Added struct tags for proper unmarshaling
 }
 
 
@@ -31,7 +32,12 @@ type FluxdbFetchPayload struct {
 //func to handle task xxx
 
 func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
-	fmt.Println(t.Type())
+	
+	var payload FluxdbFetchPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("json payload as %v", payload.BucketName)
 	
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("erro loading .env file: %v", err)
@@ -48,14 +54,13 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	client.Options().SetHTTPRequestTimeout(uint(30000 * time.Second)).SetLogLevel(3)
 	defer client.Close()
 
-	buckets := []string{"MWKn", "MWKs", "KSNOnu", "KWDOnu", "STNOnu"}
-	for _, buck := range buckets {
-		_, err := fluxdb.InitClient(client, buck)
-		if err != nil {
-			return err
-		}
+	
 
+	//create from task payload bucketname
+	if _, err := fluxdb.InitClient(client,payload.BucketName); err != nil {
+		log.Fatal(err)
 	}
+
 	log.Println("Done processing...")
 	return nil
 
