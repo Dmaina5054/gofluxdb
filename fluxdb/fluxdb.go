@@ -36,11 +36,10 @@ type EndpointResult struct {
 //passing of parameters for
 //bucket or desired timestamp
 
-
-func InitClient(client influxdb2.Client, bucket string)(string, error) {
+func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 	//define a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 45* time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
@@ -48,16 +47,15 @@ func InitClient(client influxdb2.Client, bucket string)(string, error) {
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
-  |> range(start: -30s)
+  |> range(start: -15m)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
   |> filter(fn: (r) => r["_value"] == 2)
-  |> distinct(column: "_table")
-   |> distinct(column: "serialNumber")
-  |> first()
+  |> group(columns: ["serialNumber"])
+  |> aggregateWindow(every: 5m, fn: last, createEmpty: false)
+  |> distinct(column: "serialNumber")
+  |> yield(name: "last")
 `, bucket)
-
-	
 
 	res, err := queryApi.Query(ctx, fluxQuery)
 	if err != nil {
@@ -100,7 +98,7 @@ func InitClient(client influxdb2.Client, bucket string)(string, error) {
 	if res.Err() != nil {
 		log.Fatalf("Error reading record %v", res.Err().Error())
 	}
-return "ok", err
+	return "ok", err
 }
 
 func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
@@ -246,7 +244,7 @@ func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
 
 	//define prefix handlers
-	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn","krbs"}
+	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn", "krbs"}
 
 	//iterate and check if exist
 	for _, prefix := range prefixes {
