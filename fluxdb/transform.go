@@ -1,8 +1,6 @@
 package fluxdb
 
-
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,13 +9,7 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"github.com/influxdata/influxdb-client-go/v2/api/query"
 )
-
-
-
 
 type EndpointResult struct {
 	ClientContact int    `json:"ClientContact"`
@@ -37,7 +29,6 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
-
 func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
 	// Define the API endpoint and parameters
@@ -45,6 +36,7 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 	fullApiURL := kompApi + "/" + apiSuffix
 	kompJwt := os.Getenv("KOMP_JWT")
 	serialCode := serialNumber
+	fmt.Println(serialCode)
 
 	// Create an HTTP client
 	client := &http.Client{
@@ -67,7 +59,6 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 	q := req.URL.Query()
 	q.Add("serial_code", serialCode)
 	req.URL.RawQuery = q.Encode()
-	fmt.Println(req.URL)
 
 	// Send the HTTP request
 	resp, err := client.Do(req)
@@ -113,43 +104,6 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 
 }
 
-// perform transformation
-func performTransformation(record *query.FluxRecord, client influxdb2.Client, destBucket string, apiSuffix string) {
-
-	client.Options().SetHTTPRequestTimeout(uint(30 * time.Second))
-	defer client.Close()
-
-	//initialize write api
-	writeApi := client.WriteAPIBlocking("techops_monitor", destBucket)
-
-	for range record.Values() {
-		serialNo := record.ValueByKey("serialNumber")
-		//just to be safe despite filter in fluxquery
-		if serialNo != "<nil>" {
-			apires := enrichResult(serialNo.(string), apiSuffix, destBucket)
-
-			p := influxdb2.NewPointWithMeasurement("interface")
-
-			p.AddField("GponPort", apires.Port)
-			p.AddTag("OnuCode", apires.OnuCode)
-			p.AddTag("OnuSerialNumber", apires.SerialNumber)
-			p.AddTag("BuildingName", apires.BuildingName)
-			p.AddTag("olt", fmt.Sprintf("%v", apires.Olt))
-			p.AddTag("BuildingCode", apires.BuildingCode)
-			p.AddTag("ClientName", apires.ClientName)
-			p.AddTag("ClientContact", fmt.Sprintf("%v", apires.ClientContact))
-			p.AddTag("GponPort", fmt.Sprintf("%v", apires.Port))
-
-			p.SetTime(time.Now())
-			//write point to bucket now
-			writeApi.WritePoint(context.Background(), p)
-
-		}
-
-	}
-
-}
-
 // function to determine endpoint to be scrapped
 func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
@@ -160,7 +114,7 @@ func formatApiPrefix(bucketName string) string {
 	//iterate and check if exist
 	for _, prefix := range prefixes {
 		if strings.HasPrefix(lowercaseInput, prefix) {
-			fmt.Println(prefix)
+
 			return prefix
 
 		}
