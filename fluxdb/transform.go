@@ -31,12 +31,13 @@ type EndpointResult struct {
 
 func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
+	
+
 	// Define the API endpoint and parameters
 	kompApi := os.Getenv("KOMP_API_URL")
 	fullApiURL := kompApi + "/" + apiSuffix
 	kompJwt := os.Getenv("KOMP_JWT")
 	serialCode := serialNumber
-	fmt.Println(serialCode)
 
 	// Create an HTTP client
 	client := &http.Client{
@@ -59,6 +60,7 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 	q := req.URL.Query()
 	q.Add("serial_code", serialCode)
 	req.URL.RawQuery = q.Encode()
+	fmt.Println(req.URL)
 
 	// Send the HTTP request
 	resp, err := client.Do(req)
@@ -109,7 +111,7 @@ func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
 
 	//define prefix handlers
-	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn", "krbs"}
+	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn", "krbs", "htr", "umj"}
 
 	//iterate and check if exist
 	for _, prefix := range prefixes {

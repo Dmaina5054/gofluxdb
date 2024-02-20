@@ -4,10 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/redis/go-redis/v9"
+)
+
+var (
+	uniqueItems = make(map[string]bool)
+	mu          sync.Mutex
 )
 
 //Invoke Flux Query
@@ -79,33 +85,35 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 			//initialize write api
 			writeApi := client.WriteAPIBlocking("techops_monitor", destBucket)
-			seenSerialNumbers := make(map[string]struct{})
 
 			for range record.Values() {
-				serialNo := record.ValueByKey("serialNumber").(string)
+				mu.Lock()
+				if _, ok := uniqueItems[serialNumber.(string)]; !ok {
+					uniqueItems[serialNumber.(string)] = true
+					mu.Unlock()
 
-				if _, seen := seenSerialNumbers[serialNo]; !seen {
-					// If not seen, add it to the set and print the record
-					seenSerialNumbers[serialNo] = struct{}{}
+					// Send the serial number
+					fmt.Println("Sending ", serialNumber)
+					apires := enrichResult(serialNumber.(string), kompApiSuffix, destBucket)
 
-					apires := enrichResult(serialNo, kompApiSuffix, destBucket)
-
-					p := influxdb2.NewPointWithMeasurement("interface")
+					p := influxdb2.NewPointWithMeasurement("iface")
 
 					p.AddField("GponPort", apires.Port)
 					p.AddTag("OnuCode", apires.OnuCode)
-					p.AddTag("OnuSerialNumber", apires.SerialNumber)
+					p.AddTag("OnuSerialNumber", apires.SerialCode)
 					p.AddTag("BuildingName", apires.BuildingName)
 					p.AddTag("olt", fmt.Sprintf("%v", apires.Olt))
 					p.AddTag("BuildingCode", apires.BuildingCode)
 					p.AddTag("ClientName", apires.ClientName)
 					p.AddTag("ClientContact", fmt.Sprintf("%v", apires.ClientContact))
-					p.AddTag("GponPort", fmt.Sprintf("%v", apires.Port))
 
 					p.SetTime(time.Now())
-					//write point to bucket now
+
+					// Write point to bucket now
 					writeApi.WritePoint(context.Background(), p)
 
+				} else {
+					mu.Unlock()
 				}
 
 			}
