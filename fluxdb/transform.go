@@ -29,9 +29,9 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
-func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
-	
+//TODO: Call api on elastic search before php-fpm load balancing
+func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
 	// Define the API endpoint and parameters
 	kompApi := os.Getenv("KOMP_API_URL")
@@ -106,12 +106,16 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 
 }
 
+//add elastic search functionality
+
+
+
 // function to determine endpoint to be scrapped
 func formatApiPrefix(bucketName string) string {
 	lowercaseInput := strings.ToLower(bucketName)
 
 	//define prefix handlers
-	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn", "krbs", "htr", "umj"}
+	prefixes := []string{"mwkn", "mwks", "stn", "kwd", "ksn", "krbs", "htr", "umj", "lsm"}
 
 	//iterate and check if exist
 	for _, prefix := range prefixes {

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/Dmaina5054/gofluxdb/elksearch"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/redis/go-redis/v9"
 )
@@ -20,6 +22,8 @@ var (
 
 func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
+	//test elk
+	elksearch.SearchClient()
 	//define a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -51,6 +55,16 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 		record := res.Record()
 		serialNumber := record.ValueByKey("serialNumber")
+		ifDesc := record.ValueByKey("ifDescr")
+		agentHost := record.ValueByKey("agent_host")
+		olt := extractOlt(agentHost.(string))
+		//fmt.Println(agentHost)
+		_, err := extractNumber(ifDesc.(string))
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// fmt.Println(fmt.Sprintf("%s : %s", ifDesc, oltNumber))
 
 		//write to cache for unique
 		//define a context
@@ -102,7 +116,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 					p.AddTag("OnuCode", apires.OnuCode)
 					p.AddTag("OnuSerialNumber", apires.SerialCode)
 					p.AddTag("BuildingName", apires.BuildingName)
-					p.AddTag("olt", fmt.Sprintf("%v", apires.Olt))
+					p.AddTag("olt", fmt.Sprintf("%v", olt))
 					p.AddTag("BuildingCode", apires.BuildingCode)
 					p.AddTag("ClientName", apires.ClientName)
 					p.AddTag("ClientContact", fmt.Sprintf("%v", apires.ClientContact))
@@ -128,4 +142,27 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 		log.Fatalf("Error reading record %v", res.Err().Error())
 	}
 	return "ok", err
+}
+
+func extractNumber(label string) (string, error) {
+	// Split the label by "/"
+	parts := strings.Split(label, "/")
+
+	// Extract the number part
+	numberStr := parts[1]
+
+	// Convert the number string to an integer
+	number := strings.Split(numberStr, ":")
+	fmt.Println(number[0])
+	fmt.Println(number[1])
+	fmt.Println(label)
+
+	return number[0], nil
+}
+
+func extractOlt(hostip string) string {
+
+	lastOctet := strings.Split(hostip, ".")[len(strings.Split(hostip, "."))-1]
+	return lastOctet
+
 }

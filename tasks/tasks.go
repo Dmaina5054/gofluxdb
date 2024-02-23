@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	
 	"github.com/Dmaina5054/gofluxdb/fluxdb"
 	"github.com/hibiken/asynq"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -32,6 +33,9 @@ type FluxdbFetchPayload struct {
 //func to handle task xxx
 
 func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
+
+	//test elastic connection
+	
 	
 	var payload FluxdbFetchPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
