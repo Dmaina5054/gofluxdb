@@ -6,18 +6,16 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 )
 
-func InitElasticClient() {
+func InitElasticClient() (*elasticsearch.Client, error) {
 	config, err := InitElasticConfig()
-	if err !=nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	es, err := elasticsearch.NewClient(config)
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println(es.Info)
-
+	return es, nil
 
 }
