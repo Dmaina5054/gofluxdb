@@ -29,8 +29,10 @@ type EndpointResult struct {
 	Olt           int    `json:"olt"`
 }
 
+type ElasticResult struct {
+}
 
-//TODO: Call api on elastic search before php-fpm load balancing
+// TODO: Call api on elastic search before php-fpm load balancing
 func enrichResult(serialNumber string, apiSuffix string, destBucket string) EndpointResult {
 
 	// Define the API endpoint and parameters
@@ -107,8 +109,6 @@ func enrichResult(serialNumber string, apiSuffix string, destBucket string) Endp
 }
 
 //add elastic search functionality
-
-
 
 // function to determine endpoint to be scrapped
 func formatApiPrefix(bucketName string) string {

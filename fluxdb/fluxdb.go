@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Dmaina5054/gofluxdb/elksearch"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/redis/go-redis/v9"
 )
@@ -22,8 +21,6 @@ var (
 
 func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
-	//test elk
-	elksearch.SearchClient()
 	//define a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
