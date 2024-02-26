@@ -11,16 +11,19 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 )
 
-func SearchClient() {
+func SearchClient() (*elasticsearch.Client, error) {
 	es, err := InitElasticClient()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%w", err)
+		return nil, err
 	}
-	fmt.Println(es.Info())
+	return es, nil
 
 }
 
-func Search(client *elasticsearch.Client, indexName, building string) ([]map[string]interface{}, error) {
+func Search(client *elasticsearch.Client, indexName, serialCode string) ([]map[string]interface{}, error) {
+	
+	
 	// Prepare the query DSL with the provided building
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
@@ -28,7 +31,7 @@ func Search(client *elasticsearch.Client, indexName, building string) ([]map[str
 				"must": []interface{}{
 					map[string]interface{}{
 						"fuzzy": map[string]interface{}{
-							"Building": building,
+							"Serial_Code": serialCode,
 						},
 					},
 				},

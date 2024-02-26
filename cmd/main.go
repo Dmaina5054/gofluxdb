@@ -37,7 +37,7 @@ func main() {
 
 	// // TODO: Declare a normal func and use asynq.HandleFunc
 	if err := srv.Run(mux); err != nil {
-		log.Fatal(err)
+		log.Printf("%w", err)
 	}
 
 }

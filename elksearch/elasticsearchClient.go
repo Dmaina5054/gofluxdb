@@ -1,7 +1,6 @@
 package elksearch
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -10,19 +9,13 @@ import (
 func InitElasticClient() (*elasticsearch.Client, error) {
 	config, err := InitElasticConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%w", err)
 	}
 
 	es, err := elasticsearch.NewClient(config)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%w", err)
 	}
-	res, errr := Search(es, "umj3", "WOT")
-	if errr != nil {
-		fmt.Println(errr)
-	}
-
-	fmt.Println(res)
 
 	return es, nil
 

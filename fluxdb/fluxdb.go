@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Dmaina5054/gofluxdb/elksearch"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/redis/go-redis/v9"
 )
@@ -20,6 +21,10 @@ var (
 //Invoke Flux Query
 
 func InitClient(client influxdb2.Client, bucket string) (string, error) {
+	es, err := elksearch.SearchClient()
+	if err != nil {
+		log.Printf("%w", err)
+	}
 
 	//define a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
@@ -30,11 +35,13 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
-  |> range(start: -40m)
+  |> range(start: -5m)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
-  |> filter(fn: (r) => r["serialNumber"] != "")
   |> filter(fn: (r) => r["_value"] == 2)
+  |> filter(fn: (r) => r["serialNumber"] != "")
+  |> filter(fn: (r) => r["ifDescr"] != "")
+ 
  
   |> aggregateWindow(every: 5m, fn: last, createEmpty: false)
   |> distinct(column: "serialNumber")
@@ -44,7 +51,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	res, err := queryApi.Query(ctx, fluxQuery)
 	if err != nil {
 		//hande InfluxDB-specific error
-		log.Printf("Influx Error: %v", err)
+		log.Printf("Influx Errored with: %v", err)
 	}
 
 	// process record if no error
@@ -105,23 +112,33 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 					// Send the serial number
 					fmt.Println("Sending ", serialNumber)
-					apires := enrichResult(serialNumber.(string), kompApiSuffix, destBucket)
 
-					p := influxdb2.NewPointWithMeasurement("iface")
+					//enrich with elasticSearch
+					dat, err := elksearch.Search(es, kompApiSuffix, serialNumber.(string))
+					if err != nil {
+						log.Printf("recieved Err %w", err)
+					}
+					for _, data := range dat {
 
-					p.AddField("GponPort", apires.Port)
-					p.AddTag("OnuCode", apires.OnuCode)
-					p.AddTag("OnuSerialNumber", apires.SerialCode)
-					p.AddTag("BuildingName", apires.BuildingName)
-					p.AddTag("olt", fmt.Sprintf("%v", olt))
-					p.AddTag("BuildingCode", apires.BuildingCode)
-					p.AddTag("ClientName", apires.ClientName)
-					p.AddTag("ClientContact", fmt.Sprintf("%v", apires.ClientContact))
+						p := influxdb2.NewPointWithMeasurement("ifstatus")
 
-					p.SetTime(time.Now())
+						p.AddField("GponPort", ifDesc)
+						p.AddTag("OnuCode", data["OnuCode"].(string))
+						p.AddTag("OnuSerialNumber", fmt.Sprintf(data["Serial_Code"].(string)))
+						p.AddTag("BuildingName", data["Building"].(string))
+						p.AddTag("olt", fmt.Sprintf("%v", olt))
+						p.AddTag("BuildingCode", data["Code"].(string))
+						p.AddTag("ClientName", data["Client"].(string))
+						p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
 
-					// Write point to bucket now
-					writeApi.WritePoint(context.Background(), p)
+						p.SetTime(time.Now())
+
+						fmt.Println(p)
+
+						// Write point to bucket now
+						writeApi.WritePoint(context.Background(), p)
+
+					}
 
 				} else {
 					mu.Unlock()
@@ -136,7 +153,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	//check if any error during flux query
 
 	if res.Err() != nil {
-		log.Fatalf("Error reading record %v", res.Err().Error())
+		log.Printf("Error reading record %v", res.Err().Error())
 	}
 	return "ok", err
 }
@@ -150,9 +167,6 @@ func extractNumber(label string) (string, error) {
 
 	// Convert the number string to an integer
 	number := strings.Split(numberStr, ":")
-	fmt.Println(number[0])
-	fmt.Println(number[1])
-	fmt.Println(label)
 
 	return number[0], nil
 }
