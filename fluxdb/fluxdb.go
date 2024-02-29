@@ -35,7 +35,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
-  |> range(start: -5m)
+  |> range(start: -30m)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
   |> filter(fn: (r) => r["_value"] == 2)
@@ -95,6 +95,8 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 			//define destination bucket
 			destBucket := bucket + "Downsampled"
 
+			fmt.Println(destBucket)
+
 			//determine endpoint suffix for KOMP API
 			kompApiSuffix := formatApiPrefix(bucket)
 
@@ -103,6 +105,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 			//initialize write api
 			writeApi := client.WriteAPIBlocking("techops_monitor", destBucket)
+			fmt.Println(kompApiSuffix)
 
 			for range record.Values() {
 				mu.Lock()
@@ -112,33 +115,44 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 					// Send the serial number
 					fmt.Println("Sending ", serialNumber)
+					fmt.Println(kompApiSuffix)
 
 					//enrich with elasticSearch
 					dat, err := elksearch.Search(es, kompApiSuffix, serialNumber.(string))
+
 					if err != nil {
 						log.Printf("recieved Err %w", err)
 					}
-					for _, data := range dat {
 
-						p := influxdb2.NewPointWithMeasurement("ifstatus")
+					if len(dat) != 0 {
+						for _, data := range dat {
+							fmt.Println(data)
 
-						p.AddField("GponPort", ifDesc)
-						p.AddTag("OnuCode", data["OnuCode"].(string))
-						p.AddTag("OnuSerialNumber", fmt.Sprintf(data["Serial_Code"].(string)))
-						p.AddTag("BuildingName", data["Building"].(string))
-						p.AddTag("olt", fmt.Sprintf("%v", olt))
-						p.AddTag("BuildingCode", data["Code"].(string))
-						p.AddTag("ClientName", data["Client"].(string))
-						p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
+							p := influxdb2.NewPointWithMeasurement("ifstatus")
+							fmt.Println(*p)
+							fmt.Println(fmt.Sprintf(data["Serial_Code"].(string)))
+							fmt.Println(data["Building"].(string))
 
-						p.SetTime(time.Now())
+							p.AddField("GponPort", ifDesc)
+							p.AddTag("OnuCode", data["OnuCode"].(string))
+							p.AddTag("OnuSerialNumber", fmt.Sprintf(data["Serial_Code"].(string)))
+							p.AddTag("BuildingName", data["Building"].(string))
+							p.AddTag("olt", fmt.Sprintf("%v", olt))
+							p.AddTag("BuildingCode", data["Code"].(string))
+							p.AddTag("ClientName", data["Client"].(string))
+							p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
 
-						fmt.Println(p)
+							p.SetTime(time.Now())
 
-						// Write point to bucket now
-						writeApi.WritePoint(context.Background(), p)
+							fmt.Println(p)
+
+							// Write point to bucket now
+							writeApi.WritePoint(context.Background(), p)
+
+						}
 
 					}
+					fmt.Printf("No result for %w",serialNumber)
 
 				} else {
 					mu.Unlock()
