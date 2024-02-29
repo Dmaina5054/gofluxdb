@@ -126,12 +126,8 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 					if len(dat) != 0 {
 						for _, data := range dat {
-							fmt.Println(data)
 
-							p := influxdb2.NewPointWithMeasurement("ifstatus")
-							fmt.Println(*p)
-							fmt.Println(fmt.Sprintf(data["Serial_Code"].(string)))
-							fmt.Println(data["Building"].(string))
+							p := influxdb2.NewPointWithMeasurement("enrichedIface")
 
 							p.AddField("GponPort", ifDesc)
 							p.AddTag("OnuCode", data["OnuCode"].(string))
@@ -140,7 +136,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 							p.AddTag("olt", fmt.Sprintf("%v", olt))
 							p.AddTag("BuildingCode", data["Code"].(string))
 							p.AddTag("ClientName", data["Client"].(string))
-							p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
+							//	p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
 
 							p.SetTime(time.Now())
 
@@ -152,7 +148,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 						}
 
 					}
-					fmt.Printf("No result for %w",serialNumber)
+					fmt.Printf("No result for %w", serialNumber)
 
 				} else {
 					mu.Unlock()
