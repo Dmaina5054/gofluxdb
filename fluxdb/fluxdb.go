@@ -35,7 +35,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
-  |> range(start: -30m)
+  |> range(start: -5m)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
   |> filter(fn: (r) => r["_value"] == 2)
@@ -140,15 +140,13 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 							p.SetTime(time.Now())
 
-							fmt.Println(p)
-
 							// Write point to bucket now
 							writeApi.WritePoint(context.Background(), p)
 
 						}
 
 					}
-					fmt.Printf("No result for %w", serialNumber)
+					fmt.Printf("No result for %s", serialNumber)
 
 				} else {
 					mu.Unlock()

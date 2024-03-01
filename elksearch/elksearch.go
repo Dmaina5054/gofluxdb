@@ -22,8 +22,7 @@ func SearchClient() (*elasticsearch.Client, error) {
 }
 
 func Search(client *elasticsearch.Client, indexName, serialCode string) ([]map[string]interface{}, error) {
-	
-	
+
 	// Prepare the query DSL with the provided building
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
