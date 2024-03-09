@@ -3,10 +3,8 @@ package tasks
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/Dmaina5054/gofluxdb/fluxdb"
 	"github.com/hibiken/asynq"
@@ -37,22 +35,24 @@ func HandleFluxdbFetch(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		log.Printf("Error %w", err)
 	}
-	fmt.Printf("json payload as %v", payload.BucketName)
 
 	if err := godotenv.Load(); err != nil {
-		log.Printf("erro loading .env file: %v", err)
+		log.Printf("error loading .env file: %v", err)
 	}
 
 	// get influxdb config properties
 	influxUrl := os.Getenv("INFLUX_URL")
-	influxToken := os.Getenv("INFLUX_TK")
+	//influxToken := os.Getenv("INFLUX_TK")
+	influxOptions := influxdb2.DefaultOptions().SetHTTPRequestTimeout(10000).SetMaxRetries(10)
 
-	client := influxdb2.NewClientWithOptions(influxUrl, influxToken, influxdb2.DefaultOptions().SetMaxRetries(5))
-	client.Options().SetHTTPRequestTimeout(uint(60000 * time.Millisecond)).SetLogLevel(4) // Set timeout to 60 seconds
+	client := influxdb2.NewClientWithOptions(influxUrl, "n_Vh5_hbrV8V5d2nppDcuhEsqy9UqOynuPuosuTlo0TS7YjYZbm4hA3MaSaFXGzuClHVJjwWOPJvNj5slcSe1Q==", influxOptions)
+
 	defer client.Close()
 	//create from task payload bucketname
 	if _, err := fluxdb.InitClient(client, payload.BucketName); err != nil {
-		log.Printf("Err %w", err)
+		//log.Printf("Err %w", err)
+		log.Panic(err)
+		recover()
 	}
 
 	log.Println("Done processing...")

@@ -27,7 +27,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	}
 
 	//define a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	defer cancel()
 	// define queryApi
 	queryApi := client.QueryAPI("techops_monitor")
@@ -35,15 +35,13 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 	// Flux query
 	fluxQuery := fmt.Sprintf(`
 	from(bucket: "%s")
-  |> range(start: -5m)
+  |> range(start: -15m)
   |> filter(fn: (r) => r["_measurement"] == "interface")
   |> filter(fn: (r) => r["_field"] == "ifOperStatus")
   |> filter(fn: (r) => r["_value"] == 2)
   |> filter(fn: (r) => r["serialNumber"] != "")
   |> filter(fn: (r) => r["ifDescr"] != "")
- 
- 
-  |> aggregateWindow(every: 5m, fn: last, createEmpty: false)
+  |> aggregateWindow(every: 1m, fn: last, createEmpty: false)
   |> distinct(column: "serialNumber")
   |> yield(name: "last")
 `, bucket)
@@ -62,13 +60,11 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 		ifDesc := record.ValueByKey("ifDescr")
 		agentHost := record.ValueByKey("agent_host")
 		olt := extractOlt(agentHost.(string))
-		//fmt.Println(agentHost)
+
 		_, err := extractNumber(ifDesc.(string))
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
-
-		// fmt.Println(fmt.Sprintf("%s : %s", ifDesc, oltNumber))
 
 		//write to cache for unique
 		//define a context
@@ -85,7 +81,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 		result, err := redclient.SetNX(ctx, serialNumber.(string), serialNumber, 30*time.Minute).Result()
 
 		if err != nil {
-			fmt.Println(err)
+			log.Print(err)
 			continue
 
 		}
@@ -95,8 +91,6 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 			//define destination bucket
 			destBucket := bucket + "Downsampled"
 
-			fmt.Println(destBucket)
-
 			//determine endpoint suffix for KOMP API
 			kompApiSuffix := formatApiPrefix(bucket)
 
@@ -105,17 +99,12 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 
 			//initialize write api
 			writeApi := client.WriteAPIBlocking("techops_monitor", destBucket)
-			fmt.Println(kompApiSuffix)
 
 			for range record.Values() {
 				mu.Lock()
 				if _, ok := uniqueItems[serialNumber.(string)]; !ok {
 					uniqueItems[serialNumber.(string)] = true
 					mu.Unlock()
-
-					// Send the serial number
-					fmt.Println("Sending ", serialNumber)
-					fmt.Println(kompApiSuffix)
 
 					//enrich with elasticSearch
 					dat, err := elksearch.Search(es, kompApiSuffix, serialNumber.(string))
@@ -130,13 +119,13 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 							p := influxdb2.NewPointWithMeasurement("enrichedIface")
 
 							p.AddField("GponPort", ifDesc)
+
 							p.AddTag("OnuCode", data["OnuCode"].(string))
 							p.AddTag("OnuSerialNumber", fmt.Sprintf(data["Serial_Code"].(string)))
 							p.AddTag("BuildingName", data["Building"].(string))
 							p.AddTag("olt", fmt.Sprintf("%v", olt))
 							p.AddTag("BuildingCode", data["Code"].(string))
 							p.AddTag("ClientName", data["Client"].(string))
-							//	p.AddTag("ClientContact", fmt.Sprintf(data["Contact"].(string)))
 
 							p.SetTime(time.Now())
 
@@ -146,7 +135,7 @@ func InitClient(client influxdb2.Client, bucket string) (string, error) {
 						}
 
 					}
-					fmt.Printf("No result for %s", serialNumber)
+					log.Printf("No result for %s", serialNumber)
 
 				} else {
 					mu.Unlock()
